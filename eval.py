@@ -31,3 +31,36 @@ class BertMultiClassifier:
 
         # Save the results to the output file
         df.to_excel(output_file_path, index=False)
+
+        
+import torch
+from transformers import BertTokenizer, BertForSequenceClassification
+from sklearn.metrics import classification_report
+
+# Load the tokenizer and model
+tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+model = BertForSequenceClassification.from_pretrained('bert-base-uncased', num_labels=2)
+
+# Define your validation data and dataloader
+val_data = # your validation data
+val_dataloader = # your validation dataloader
+
+# Evaluate the model on the validation set
+model.eval()
+val_loss, val_acc, val_f1 = 0, 0, 0
+y_true, y_pred = [], []
+with torch.no_grad():
+    for batch in val_dataloader:
+        inputs = tokenizer(batch['text'], padding=True, truncation=True, return_tensors='pt')
+        labels = batch['label']
+        outputs = model(**inputs, labels=labels)
+        loss, logits = outputs[:2]
+        y_true.extend(labels.cpu().numpy())
+        y_pred.extend(torch.argmax(logits, dim=1).cpu().numpy())
+        val_loss += loss.item()
+        val_acc += (torch.argmax(logits, dim=1) == labels).sum().item()
+
+# Compute the classification report
+class_names = ['class 0', 'class 1']  # replace with your class names
+print(classification_report(y_true, y_pred, target_names=class_names))
+ 
